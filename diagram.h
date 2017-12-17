@@ -11,6 +11,14 @@ typedef struct
 	int *filling; // filling[i] = j means that there is a 1 at [j,i]
 } diagram;
 
+void diagram_init(diagram *d, int h, int w)
+{
+	d->h = h;
+	d->w = w;
+	d->b = malloc(w * sizeof(int));
+	d->t = malloc(w * sizeof(int));
+	d->filling = malloc(w * sizeof(int));
+}
 
 void diagram_init_map(diagram *d)
 {
@@ -54,11 +62,11 @@ void diagram_free(diagram *d)
 static bool used[100];
 static int ctr;
 
-static void iterate(diagram *d, int *pattern, void function(diagram *, int *), int column, bool partial)
+static void iterate(diagram *d, diagram *to_avoid, void function(diagram *, diagram *), int column, bool partial)
 {
 	if (column >= d->w) {
 		ctr++;
-		function(d, pattern);
+		function(d, to_avoid);
 		return;
 	}
 
@@ -67,20 +75,20 @@ static void iterate(diagram *d, int *pattern, void function(diagram *, int *), i
 			used[i] = true;
 			d->filling[column] = i;
 			d->map[i][column] = '1';
-			iterate(d, pattern, function, column + 1, partial);
+			iterate(d, to_avoid, function, column + 1, partial);
 			d->map[i][column] = '0';
 			used[i] = false;
 		}	
 	}
 
 	if (partial) {
-		iterate(d, pattern, function, column + 1, partial);
+		iterate(d, to_avoid, function, column + 1, partial);
 	}
 }
 
-int diagram_iterate_over_fillings(diagram *d, int *pattern, void function(diagram *, int *), bool partial)
+int diagram_iterate_over_fillings(diagram *d, diagram *to_avoid, void function(diagram *, diagram *), bool partial)
 {
 	ctr = 0;
-	iterate(d, pattern, function, 0, partial);		
+	iterate(d, to_avoid, function, 0, partial);		
 	return ctr;
 }
