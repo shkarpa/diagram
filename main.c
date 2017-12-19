@@ -127,21 +127,54 @@ bool avoids_diag4(diagram *d, diagram *to_avoid)
 	return true;
 }
 
+bool avoids_diag5_transparent(diagram *d, diagram *to_avoid)
+{
+	int n = d->h;
+	for (int col1 = 0; col1 < n-4; col1++) {
+		for (int col2 = col1 + 1; col2 < n-3; col2++) {
+			for (int col3 = col2 + 1; col3 < n-2; col3++) {
+				for (int col4 = col3 + 1; col4 < n-1; col4++) {
+					for (int col5 = col4 + 1; col5 < n; col5++) {
+						int cols[] = {col1, col2, col3, col4, col5};
+						int rows[] = {d->filling[col1], d->filling[col2], d->filling[col3], d->filling[col4], d->filling[col5]};
+						insert_sort(rows, 5);
+						bool matches = true;
+						for (int i = 0; i < 5; i++) {
+							for (int j = 0; j < 5; j++) {
+								if (to_avoid->map[i][j] != d->map[rows[i]][cols[j]]) {
+								//	if (!(to_avoid->map[i][j] == '#' && d->map[rows[i]][cols[j]] == '0')) {
+										matches = false;
+								//	}
+								}
+							}
+						}
+						if (matches) {
+							return false;
+						}
+					}
+				}
+			}
+		}
+	}
+	return true;
+}
+
 void hypo(diagram *d, diagram *to_avoid)
 {
 	if (avoids_pattern3(d, &to_avoid[0])) {
-		 if (avoids_diag4(d, &to_avoid[1])) {
-			filling_ctr++;
+		if (avoids_diag4(d, &to_avoid[1])) {
+			if (avoids_diag5_transparent(d, &to_avoid[2])) {
+				filling_ctr++;
+				//diagram_print_map(d);
+				//printf("\n");
+			}
 		 }
-	//	 else {
-	//		diagram_print_map(d);
-	//	 	printf("smejd\n\n");
-	//	 }
 	}
 }
 
 void hypo_init(diagram *d)
 {
+	diagram_init(d, 4, 4);
 	for (int i = 0; i < 4; i++) {
 		d->b[i] = 0;
 		d->t[i] = 4;
@@ -158,11 +191,34 @@ void hypo_init(diagram *d)
 	for (int i = 0; i < 4; i++) {
 		d->map[filling[i]][i] = '1';
 	}
+
+	d++;
+	diagram_init(d, 5, 5);
+
+	for (int i = 0; i < 5; i++) {
+		d->b[i] = 0;
+		d->t[i] = 5;
+	}
+	//d->b[3] = 2;
+	d->b[4] = 1;
+	d->t[0] = 4;
+	//d->t[1] = 3;
+	diagram_init_map(d);
+
+	filling = d->filling;
+	filling[0] = 1;
+	filling[1] = 0;
+	filling[2] = 3;
+	filling[3] = 2;
+	filling[4] = 4;
+	for (int i = 0; i < 5; i++) {
+		d->map[filling[i]][i] = '1';
+	}
 }
 
 int main(void)
 {
-	int testcount = 1764;
+	int testcount = 17424;
 
 	for (int t = 0; t < testcount; t++) {
 		
@@ -180,12 +236,11 @@ int main(void)
 
 		diagram_init_map(&d);
 			
-		diagram to_avoid[2];
+		diagram to_avoid[3];
 		diagram_init(to_avoid, 3, 3);
 		to_avoid[0].filling[0] = 0;	
 		to_avoid[0].filling[1] = 1;	
 		to_avoid[0].filling[2] = 2;	
-		diagram_init(&to_avoid[1], 4, 4);
 		hypo_init(&to_avoid[1]);
 
 		filling_ctr = 0;
@@ -214,6 +269,9 @@ int main(void)
 			printf("there are %d fillings out of %d of the given diagram avoiding 321\n", b, ctr2);
 		}
 		diagram_free(&d);
+		for (int i = 1; i < 3; i++) {
+			diagram_free(&to_avoid[i]);
+		}
 	}
 	return 0;
 }
